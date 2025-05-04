@@ -134,23 +134,24 @@ if file_type == "PDF-файлы":
             if st.button("Извлечь страницу из PDF"):
                 for uploaded_file in uploaded_files:
                     try:
-                        uploaded_file.seek(0)  # Важно: вернуть указатель в начало файла
+                        uploaded_file.seek(0)
                         pdf_bytes = uploaded_file.read()
                         base64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
 
                         response = requests.post(
                             "https://backendcompare.onrender.com/api/convert-pdf/",
-                            json={"pdf": base64_pdf, "page": page}
+                            json={"pdf": base64_pdf, "page": page},
+                            timeout=60
                         )
 
                         if response.status_code == 200:
                             b64_image = response.json().get("image")
                             if b64_image:
                                 image_data = base64.b64decode(b64_image)
-                                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-                                temp_file.write(image_data)
-                                temp_file.flush()
-                                converted_images.append(temp_file.name)
+                                with tempfile.NamedTemporaryFile(delete=False, suffix=".png") as temp_file:
+                                    temp_file.write(image_data)
+                                    temp_file.flush()
+                                    converted_images.append(temp_file.name)
                             else:
                                 st.error(f"Не удалось получить изображение для страницы {page}.")
                                 st.stop()
@@ -158,17 +159,12 @@ if file_type == "PDF-файлы":
                             st.error(f"Ошибка при конвертации PDF: {response.status_code}")
                             st.stop()
 
+                    except requests.exceptions.Timeout:
+                        st.error("Время ожидания ответа сервера истекло.")
+                        st.stop()
                     except Exception as e:
                         st.error(f"Ошибка: {str(e)}")
                         st.stop()
-
-                if len(converted_images) == 2:
-                    st.session_state["converted_images"] = converted_images
-                    st.image(converted_images[0], caption="Страница из PDF 1", use_container_width=True)
-                    st.image(converted_images[1], caption="Страница из PDF 2", use_container_width=True)
-    else:
-        st.info("Необходимо выбрать ровно два PDF-файла.")
-
         # converted_images = []
         #
         # if file_type == "PDF-файлы":
