@@ -73,9 +73,13 @@ if uploaded_files and len(uploaded_files) == 2:
                     st.error(f"Ошибка: {str(e)}")
                     st.stop()
 
-            # Отображаем изображения
-            st.image(st.session_state.converted_images[0], caption="Страница из PDF 1", use_container_width=True)
-            st.image(st.session_state.converted_images[1], caption="Страница из PDF 2", use_container_width=True)
+            if len(st.session_state.converted_images) == 2:
+                # Отображаем изображения
+                st.image(st.session_state.converted_images[0], caption="Страница из PDF 1", use_container_width=True)
+                st.image(st.session_state.converted_images[1], caption="Страница из PDF 2", use_container_width=True)
+        else:
+            st.error("Нажмите на кнопку Извлечь.")
+            st.stop()
 
     else:
         # Если изображения
