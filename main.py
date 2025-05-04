@@ -34,14 +34,14 @@ elif file_type == "Изображения":
 if uploaded_files and len(uploaded_files) == 2:
     suffix = ".pdf" if file_type == "PDF-файлы" else ".png"
 
-    temp_files = []
-    for uploaded_file in uploaded_files:
-        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-        temp_file.write(uploaded_file.read())
-        temp_file.flush()  # убедимся, что данные записаны
-        temp_files.append(temp_file)
+    # temp_files = []
+    # for uploaded_file in uploaded_files:
+    #     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+    #     temp_file.write(uploaded_file.read())
+    #     temp_file.flush()  # убедимся, что данные записаны
+    #     temp_files.append(temp_file)
 
-    file_paths = [temp_file.name for temp_file in temp_files]
+    # file_paths = [temp_file.name for temp_file in temp_files]
 
     # Если PDF — сначала конвертация нужных страниц в изображения
     # if file_type == "PDF-файлы":
@@ -212,10 +212,10 @@ if uploaded_files and len(uploaded_files) == 2:
         #             st.image(converted_images[0], caption="Страница из PDF 1", use_container_width=True)
         #             st.image(converted_images[1], caption="Страница из PDF 2", use_container_width=True)
 
-    else:
-        # Если изображения
-        f1_path, f2_path = file_paths
-        st.image([uploaded_files[0], uploaded_files[1]], caption=["Изображение 1", "Изображение 2"], width=300)
+    # else:
+    #     # Если изображения
+    #     f1_path, f2_path = file_paths
+    #     st.image([uploaded_files[0], uploaded_files[1]], caption=["Изображение 1", "Изображение 2"], width=300)
 else:
     st.error("Необходимо выбрать ровно два файла.")
     st.stop()
