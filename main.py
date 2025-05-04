@@ -54,28 +54,27 @@ if uploaded_files and len(uploaded_files) == 2:
 
         page = int(page_number)
 
-        converted_images = []
-        # if st.button("Извлечь страницу из PDF"):
-            # st.session_state.converted_images = []
-        for pdf_path in file_paths:
-            try:
-                output_dir = tempfile.mkdtemp()
-                convert_pdf_to_images(pdf_path, output_dir, image_format="png", dpi=72, page=page)
-                # Найти конвертированное изображение
-                image_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith(".png")]
-                if image_files:
-                    converted_images.append(image_files[0])
-                else:
-                    st.error(f"Не удалось извлечь страницу {page} из {pdf_path}")
+        if st.button("Извлечь страницу из PDF"):
+            st.session_state.converted_images = []
+            for pdf_path in file_paths:
+                try:
+                    output_dir = tempfile.mkdtemp()
+                    convert_pdf_to_images(pdf_path, output_dir, image_format="png", dpi=72, page=page)
+                    # Найти конвертированное изображение
+                    image_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith(".png")]
+                    if image_files:
+                        st.session_state.converted_images.append(image_files[0])
+                    else:
+                        st.error(f"Не удалось извлечь страницу {page} из {pdf_path}")
+                        st.stop()
+                except ValueError as e:
+                    st.error(f"Ошибка: {str(e)}")
                     st.stop()
-            except ValueError as e:
-                st.error(f"Ошибка: {str(e)}")
-                st.stop()
 
-        # if len(st.session_state.converted_images) == 2:
-        # Отображаем изображения
-        st.image(converted_images[0], caption="Страница из PDF 1", use_container_width=True)
-        st.image(converted_images[1], caption="Страница из PDF 2", use_container_width=True)
+            if len(st.session_state.converted_images) == 2:
+                # Отображаем изображения
+                st.image(st.session_state.converted_images[0], caption="Страница из PDF 1", use_container_width=True)
+                st.image(st.session_state.converted_images[1], caption="Страница из PDF 2", use_container_width=True)
 
     else:
         # Если изображения
@@ -108,10 +107,6 @@ captions = {
     "diff": "Разница между изображениями",
 }
 
-# def encode_image_from_path(path):
-#     with open(path, "rb") as file:
-#         return base64.b64encode(file.read()).decode("utf-8")
-
 def resize_image(path, max_size=(1024, 1024)):
     with Image.open(path) as img:
         img.thumbnail(max_size)
@@ -121,11 +116,15 @@ def resize_image(path, max_size=(1024, 1024)):
 
 
 if st.button("Сравнить изображения"):
+    if file_type == "PDF-файлы" and len(st.session_state.converted_images) != 2:
+        st.error("Нажмите Извлечь страницу из PDF'")
+        st.stop()
+
     if file_type == "PDF-файлы":
         # Используем уже сконвертированные пути
         payload = {
-            "img1": resize_image(converted_images[0]),
-            "img2": resize_image(converted_images[1]),
+            "img1": resize_image(st.session_state.converted_images[0]),
+            "img2": resize_image(st.session_state.converted_images[1]),
         }
     else:
         # Если обычные изображения — создаем временные файлы
