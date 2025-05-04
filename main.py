@@ -20,19 +20,19 @@ file_type = st.radio(
     index=0,
 )
 
-uploaded_files = []
-if file_type == "PDF-файлы":
-    uploaded_files = st.file_uploader("Выберите два PDF-файла", type=["pdf"],
-                                      accept_multiple_files=True)
-    page_number = st.text_input("Номер страницы для сравнения:")
-    st.write(f"Выбранная страница: {page_number}")
+# uploaded_files = []
+# if file_type == "PDF-файлы":
+#     uploaded_files = st.file_uploader("Выберите два PDF-файла", type=["pdf"],
+#                                       accept_multiple_files=True)
+#     page_number = st.text_input("Номер страницы для сравнения:")
+#     st.write(f"Выбранная страница: {page_number}")
 
-elif file_type == "Изображения":
-    uploaded_files = st.file_uploader("Выберите два изображения", type=["png", "jpg", "jpeg"],
-                                      accept_multiple_files=True)
+# elif file_type == "Изображения":
+#     uploaded_files = st.file_uploader("Выберите два изображения", type=["png", "jpg", "jpeg"],
+#                                       accept_multiple_files=True)
 # Если выбрано ровно 2 файла
-if uploaded_files and len(uploaded_files) == 2:
-    suffix = ".pdf" if file_type == "PDF-файлы" else ".png"
+# if uploaded_files and len(uploaded_files) == 2:
+#     suffix = ".pdf" if file_type == "PDF-файлы" else ".png"
 
     # temp_files = []
     # for uploaded_file in uploaded_files:
@@ -107,67 +107,67 @@ if uploaded_files and len(uploaded_files) == 2:
         # st.image(converted_images[0], caption="Страница из PDF 1", use_container_width=True)
         # st.image(converted_images[1], caption="Страница из PDF 2", use_container_width=True)
 
-    uploaded_files = []
-    converted_images = []
+uploaded_files = []
+converted_images = []
 
-    if file_type == "PDF-файлы":
-        uploaded_files = st.file_uploader("Выберите два PDF-файла", type=["pdf"], accept_multiple_files=True)
-        page_number = st.text_input("Номер страницы для сравнения:")
-        st.write(f"Выбранная страница: {page_number}")
+if file_type == "PDF-файлы":
+    uploaded_files = st.file_uploader("Выберите два PDF-файла", type=["pdf"], accept_multiple_files=True)
+    page_number = st.text_input("Номер страницы для сравнения:")
+    st.write(f"Выбранная страница: {page_number}")
 
-        if uploaded_files and len(uploaded_files) == 2:
-            suffix = ".pdf"
-            temp_files = []
-            for uploaded_file in uploaded_files:
-                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
-                temp_file.write(uploaded_file.read())
-                temp_file.flush()
-                temp_files.append(temp_file)
+    if uploaded_files and len(uploaded_files) == 2:
+        suffix = ".pdf"
+        temp_files = []
+        for uploaded_file in uploaded_files:
+            temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+            temp_file.write(uploaded_file.read())
+            temp_file.flush()
+            temp_files.append(temp_file)
 
-            file_paths = [temp_file.name for temp_file in temp_files]
+        file_paths = [temp_file.name for temp_file in temp_files]
 
-            if not page_number.isdigit() or int(page_number) < 1:
-                st.warning("Введите корректный номер страницы (целое число >= 1)")
-            else:
-                page = int(page_number)
+        if not page_number.isdigit() or int(page_number) < 1:
+            st.warning("Введите корректный номер страницы (целое число >= 1)")
+        else:
+            page = int(page_number)
 
-                if st.button("Извлечь страницу из PDF"):
-                    for uploaded_file in uploaded_files:
-                        try:
-                            uploaded_file.seek(0)  # Важно: вернуть указатель в начало файла
-                            pdf_bytes = uploaded_file.read()
-                            base64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
+            if st.button("Извлечь страницу из PDF"):
+                for uploaded_file in uploaded_files:
+                    try:
+                        uploaded_file.seek(0)  # Важно: вернуть указатель в начало файла
+                        pdf_bytes = uploaded_file.read()
+                        base64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
 
-                            response = requests.post(
-                                "https://backendcompare.onrender.com/api/convert-pdf/",
-                                json={"pdf": base64_pdf, "page": page}
-                            )
+                        response = requests.post(
+                            "https://backendcompare.onrender.com/api/convert-pdf/",
+                            json={"pdf": base64_pdf, "page": page}
+                        )
 
-                            if response.status_code == 200:
-                                b64_image = response.json().get("image")
-                                if b64_image:
-                                    image_data = base64.b64decode(b64_image)
-                                    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-                                    temp_file.write(image_data)
-                                    temp_file.flush()
-                                    converted_images.append(temp_file.name)
-                                else:
-                                    st.error(f"Не удалось получить изображение для страницы {page}.")
-                                    st.stop()
+                        if response.status_code == 200:
+                            b64_image = response.json().get("image")
+                            if b64_image:
+                                image_data = base64.b64decode(b64_image)
+                                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+                                temp_file.write(image_data)
+                                temp_file.flush()
+                                converted_images.append(temp_file.name)
                             else:
-                                st.error(f"Ошибка при конвертации PDF: {response.status_code}")
+                                st.error(f"Не удалось получить изображение для страницы {page}.")
                                 st.stop()
-
-                        except Exception as e:
-                            st.error(f"Ошибка: {str(e)}")
+                        else:
+                            st.error(f"Ошибка при конвертации PDF: {response.status_code}")
                             st.stop()
 
-                    if len(converted_images) == 2:
-                        st.session_state["converted_images"] = converted_images
-                        st.image(converted_images[0], caption="Страница из PDF 1", use_container_width=True)
-                        st.image(converted_images[1], caption="Страница из PDF 2", use_container_width=True)
-        else:
-            st.info("Необходимо выбрать ровно два PDF-файла.")
+                    except Exception as e:
+                        st.error(f"Ошибка: {str(e)}")
+                        st.stop()
+
+                if len(converted_images) == 2:
+                    st.session_state["converted_images"] = converted_images
+                    st.image(converted_images[0], caption="Страница из PDF 1", use_container_width=True)
+                    st.image(converted_images[1], caption="Страница из PDF 2", use_container_width=True)
+    else:
+        st.info("Необходимо выбрать ровно два PDF-файла.")
 
         # converted_images = []
         #
@@ -216,9 +216,9 @@ if uploaded_files and len(uploaded_files) == 2:
     #     # Если изображения
     #     f1_path, f2_path = file_paths
     #     st.image([uploaded_files[0], uploaded_files[1]], caption=["Изображение 1", "Изображение 2"], width=300)
-else:
-    st.error("Необходимо выбрать ровно два файла.")
-    st.stop()
+# else:
+#     st.error("Необходимо выбрать ровно два файла.")
+#     st.stop()
 
 st.write("### 2. Сравнение изображений")
 
