@@ -51,20 +51,55 @@ if uploaded_files and len(uploaded_files) == 2:
 
         page = int(page_number)
 
+        # converted_images = []
+        #
+        # for pdf_path in file_paths:
+        #     try:
+        #         output_dir = tempfile.mkdtemp()
+        #         # convert_pdf_to_images(pdf_path, output_dir, image_format="png", dpi=72, page=page)
+        #         response = requests.post("https://backendcompare.onrender.com/api/convert-pdf")
+        #         # Найти конвертированное изображение
+        #         image_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith(".png")]
+        #         if image_files:
+        #             converted_images.append(image_files[0])
+        #         else:
+        #             st.error(f"Не удалось извлечь страницу {page} из {pdf_path}")
+        #             st.stop()
+        #     except ValueError as e:
+        #         st.error(f"Ошибка: {str(e)}")
+        #         st.stop()
+
         converted_images = []
 
-        for pdf_path in file_paths:
+        for uploaded_file in uploaded_files:
             try:
-                output_dir = tempfile.mkdtemp()
-                convert_pdf_to_images(pdf_path, output_dir, image_format="png", dpi=72, page=page)
-                # Найти конвертированное изображение
-                image_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith(".png")]
-                if image_files:
-                    converted_images.append(image_files[0])
+                # Прочитать PDF и закодировать в base64
+                pdf_bytes = uploaded_file.read()
+                base64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
+
+                # Отправить на API конвертации
+                response = requests.post(
+                    "https://backendcompare.onrender.com/api/convert-pdf/",
+                    json={"pdf": base64_pdf, "page": page}
+                )
+
+                if response.status_code == 200:
+                    b64_image = response.json().get("image")
+                    if b64_image:
+                        # Сохраняем изображение временно для дальнейшего использования
+                        image_data = base64.b64decode(b64_image)
+                        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+                        temp_file.write(image_data)
+                        temp_file.flush()
+                        converted_images.append(temp_file.name)
+                    else:
+                        st.error(f"Не удалось получить изображение для страницы {page}.")
+                        st.stop()
                 else:
-                    st.error(f"Не удалось извлечь страницу {page} из {pdf_path}")
+                    st.error(f"Ошибка при конвертации PDF: {response.status_code}")
                     st.stop()
-            except ValueError as e:
+
+            except Exception as e:
                 st.error(f"Ошибка: {str(e)}")
                 st.stop()
 
