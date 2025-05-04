@@ -56,7 +56,7 @@ if uploaded_files and len(uploaded_files) == 2:
         for pdf_path in file_paths:
             try:
                 output_dir = tempfile.mkdtemp()
-                convert_pdf_to_images(pdf_path, output_dir, image_format="png", dpi=150, page=page)
+                convert_pdf_to_images(pdf_path, output_dir, image_format="png", dpi=72, page=page)
                 # Найти конвертированное изображение
                 image_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith(".png")]
                 if image_files:
