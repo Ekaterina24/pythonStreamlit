@@ -20,9 +20,6 @@ file_type = st.radio(
     index=0,
 )
 
-# if "converted_images" not in st.session_state:
-#     st.session_state.converted_images = []
-
 uploaded_files = []
 if file_type == "PDF-файлы":
     uploaded_files = st.file_uploader("Выберите два PDF-файла", type=["pdf"],
