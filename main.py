@@ -44,12 +44,12 @@ if uploaded_files and len(uploaded_files) == 2:
     file_paths = [temp_file.name for temp_file in temp_files]
 
     # Если PDF — сначала конвертация нужных страниц в изображения
-    if file_type == "PDF-файлы":
-        if not page_number.isdigit() or int(page_number) < 1:
-            st.error("Введите корректный номер страницы (целое число >= 1)")
-            st.stop()
-
-        page = int(page_number)
+    # if file_type == "PDF-файлы":
+    #     if not page_number.isdigit() or int(page_number) < 1:
+    #         st.error("Введите корректный номер страницы (целое число >= 1)")
+    #         st.stop()
+    #
+    #     page = int(page_number)
 
         # converted_images = []
         #
@@ -69,43 +69,148 @@ if uploaded_files and len(uploaded_files) == 2:
         #         st.error(f"Ошибка: {str(e)}")
         #         st.stop()
 
-        converted_images = []
+        # converted_images = []
+        #
+        # for uploaded_file in uploaded_files:
+        #     try:
+        #         # Прочитать PDF и закодировать в base64
+        #         pdf_bytes = uploaded_file.read()
+        #         base64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
+        #
+        #         # Отправить на API конвертации
+        #         response = requests.post(
+        #             "https://backendcompare.onrender.com/api/convert-pdf/",
+        #             json={"pdf": base64_pdf, "page": page}
+        #         )
+        #
+        #         if response.status_code == 200:
+        #             b64_image = response.json().get("image")
+        #             if b64_image:
+        #                 # Сохраняем изображение временно для дальнейшего использования
+        #                 image_data = base64.b64decode(b64_image)
+        #                 temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+        #                 temp_file.write(image_data)
+        #                 temp_file.flush()
+        #                 converted_images.append(temp_file.name)
+        #             else:
+        #                 st.error(f"Не удалось получить изображение для страницы {page}.")
+        #                 st.stop()
+        #         else:
+        #             st.error(f"Ошибка при конвертации PDF: {response.status_code}")
+        #             st.stop()
+        #
+        #     except Exception as e:
+        #         st.error(f"Ошибка: {str(e)}")
+        #         st.stop()
 
-        for uploaded_file in uploaded_files:
-            try:
-                # Прочитать PDF и закодировать в base64
-                pdf_bytes = uploaded_file.read()
-                base64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
+        # # Отображаем изображения
+        # st.image(converted_images[0], caption="Страница из PDF 1", use_container_width=True)
+        # st.image(converted_images[1], caption="Страница из PDF 2", use_container_width=True)
 
-                # Отправить на API конвертации
-                response = requests.post(
-                    "https://backendcompare.onrender.com/api/convert-pdf/",
-                    json={"pdf": base64_pdf, "page": page}
-                )
+    uploaded_files = []
+    converted_images = []
 
-                if response.status_code == 200:
-                    b64_image = response.json().get("image")
-                    if b64_image:
-                        # Сохраняем изображение временно для дальнейшего использования
-                        image_data = base64.b64decode(b64_image)
-                        temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
-                        temp_file.write(image_data)
-                        temp_file.flush()
-                        converted_images.append(temp_file.name)
-                    else:
-                        st.error(f"Не удалось получить изображение для страницы {page}.")
-                        st.stop()
-                else:
-                    st.error(f"Ошибка при конвертации PDF: {response.status_code}")
-                    st.stop()
+    if file_type == "PDF-файлы":
+        uploaded_files = st.file_uploader("Выберите два PDF-файла", type=["pdf"], accept_multiple_files=True)
+        page_number = st.text_input("Номер страницы для сравнения:")
+        st.write(f"Выбранная страница: {page_number}")
 
-            except Exception as e:
-                st.error(f"Ошибка: {str(e)}")
-                st.stop()
+        if uploaded_files and len(uploaded_files) == 2:
+            suffix = ".pdf"
+            temp_files = []
+            for uploaded_file in uploaded_files:
+                temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
+                temp_file.write(uploaded_file.read())
+                temp_file.flush()
+                temp_files.append(temp_file)
 
-        # Отображаем изображения
-        st.image(converted_images[0], caption="Страница из PDF 1", use_container_width=True)
-        st.image(converted_images[1], caption="Страница из PDF 2", use_container_width=True)
+            file_paths = [temp_file.name for temp_file in temp_files]
+
+            if not page_number.isdigit() or int(page_number) < 1:
+                st.warning("Введите корректный номер страницы (целое число >= 1)")
+            else:
+                page = int(page_number)
+
+                if st.button("Извлечь страницу из PDF"):
+                    for uploaded_file in uploaded_files:
+                        try:
+                            uploaded_file.seek(0)  # Важно: вернуть указатель в начало файла
+                            pdf_bytes = uploaded_file.read()
+                            base64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
+
+                            response = requests.post(
+                                "https://backendcompare.onrender.com/api/convert-pdf/",
+                                json={"pdf": base64_pdf, "page": page}
+                            )
+
+                            if response.status_code == 200:
+                                b64_image = response.json().get("image")
+                                if b64_image:
+                                    image_data = base64.b64decode(b64_image)
+                                    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+                                    temp_file.write(image_data)
+                                    temp_file.flush()
+                                    converted_images.append(temp_file.name)
+                                else:
+                                    st.error(f"Не удалось получить изображение для страницы {page}.")
+                                    st.stop()
+                            else:
+                                st.error(f"Ошибка при конвертации PDF: {response.status_code}")
+                                st.stop()
+
+                        except Exception as e:
+                            st.error(f"Ошибка: {str(e)}")
+                            st.stop()
+
+                    if len(converted_images) == 2:
+                        st.session_state["converted_images"] = converted_images
+                        st.image(converted_images[0], caption="Страница из PDF 1", use_container_width=True)
+                        st.image(converted_images[1], caption="Страница из PDF 2", use_container_width=True)
+        else:
+            st.info("Необходимо выбрать ровно два PDF-файла.")
+
+        # converted_images = []
+        #
+        # if file_type == "PDF-файлы":
+        #     if not page_number.isdigit() or int(page_number) < 1:
+        #         st.error("Введите корректный номер страницы (целое число >= 1)")
+        #         st.stop()
+        #
+        #     page = int(page_number)
+        #
+        #     if st.button("Извлечь страницу из PDF"):
+        #         for uploaded_file in uploaded_files:
+        #             try:
+        #                 pdf_bytes = uploaded_file.read()
+        #                 base64_pdf = base64.b64encode(pdf_bytes).decode("utf-8")
+        #
+        #                 response = requests.post(
+        #                     "https://backendcompare.onrender.com/api/convert-pdf/",
+        #                     json={"pdf": base64_pdf, "page": page}
+        #                 )
+        #
+        #                 if response.status_code == 200:
+        #                     b64_image = response.json().get("image")
+        #                     if b64_image:
+        #                         image_data = base64.b64decode(b64_image)
+        #                         temp_file = tempfile.NamedTemporaryFile(delete=False, suffix=".png")
+        #                         temp_file.write(image_data)
+        #                         temp_file.flush()
+        #                         converted_images.append(temp_file.name)
+        #                     else:
+        #                         st.error(f"Не удалось получить изображение для страницы {page}.")
+        #                         st.stop()
+        #                 else:
+        #                     st.error(f"Ошибка при конвертации PDF: {response.status_code}")
+        #                     st.stop()
+        #             except Exception as e:
+        #                 st.error(f"Ошибка: {str(e)}")
+        #                 st.stop()
+        #
+        #         if converted_images:
+        #             st.session_state["converted_images"] = converted_images
+        #             st.image(converted_images[0], caption="Страница из PDF 1", use_container_width=True)
+        #             st.image(converted_images[1], caption="Страница из PDF 2", use_container_width=True)
 
     else:
         # Если изображения
@@ -151,11 +256,20 @@ def resize_image(path, max_size=(1024, 1024)):
 
 
 if st.button("Сравнить изображения"):
+    # if file_type == "PDF-файлы":
+    #     # Используем уже сконвертированные пути
+    #     payload = {
+    #         "img1": resize_image(converted_images[0]),
+    #         "img2": resize_image(converted_images[1]),
+    #     }
     if file_type == "PDF-файлы":
-        # Используем уже сконвертированные пути
+        if "converted_images" not in st.session_state:
+            st.warning("Сначала извлеките страницу из PDF.")
+            st.stop()
+
         payload = {
-            "img1": resize_image(converted_images[0]),
-            "img2": resize_image(converted_images[1]),
+            "img1": resize_image(st.session_state["converted_images"][0]),
+            "img2": resize_image(st.session_state["converted_images"][1]),
         }
     else:
         # Если обычные изображения — создаем временные файлы
