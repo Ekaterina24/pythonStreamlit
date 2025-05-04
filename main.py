@@ -20,6 +20,9 @@ file_type = st.radio(
     index=0,
 )
 
+if "converted_images" not in st.session_state:
+    st.session_state.converted_images = []
+
 uploaded_files = []
 if file_type == "PDF-файлы":
     uploaded_files = st.file_uploader("Выберите два PDF-файла", type=["pdf"],
@@ -53,6 +56,7 @@ if uploaded_files and len(uploaded_files) == 2:
 
         converted_images = []
         if st.button("Извлечь страницу из PDF"):
+            st.session_state.converted_images = []
             for pdf_path in file_paths:
                 try:
                     output_dir = tempfile.mkdtemp()
@@ -61,7 +65,7 @@ if uploaded_files and len(uploaded_files) == 2:
                     # Найти конвертированное изображение
                     image_files = [os.path.join(output_dir, f) for f in os.listdir(output_dir) if f.endswith(".png")]
                     if image_files:
-                        converted_images.append(image_files[0])
+                        st.session_state.converted_images.append(image_files[0])
                     else:
                         st.error(f"Не удалось извлечь страницу {page} из {pdf_path}")
                         st.stop()
@@ -70,8 +74,8 @@ if uploaded_files and len(uploaded_files) == 2:
                     st.stop()
 
             # Отображаем изображения
-            st.image(converted_images[0], caption="Страница из PDF 1", use_container_width=True)
-            st.image(converted_images[1], caption="Страница из PDF 2", use_container_width=True)
+            st.image(st.session_state.converted_images[0], caption="Страница из PDF 1", use_container_width=True)
+            st.image(st.session_state.converted_images[1], caption="Страница из PDF 2", use_container_width=True)
 
     else:
         # Если изображения
@@ -120,8 +124,8 @@ if st.button("Сравнить изображения"):
     if file_type == "PDF-файлы":
         # Используем уже сконвертированные пути
         payload = {
-            "img1": resize_image(converted_images[0]),
-            "img2": resize_image(converted_images[1]),
+            "img1": resize_image(st.session_state.converted_images[0]),
+            "img2": resize_image(st.session_state.converted_images[1]),
         }
     else:
         # Если обычные изображения — создаем временные файлы
