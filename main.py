@@ -103,12 +103,16 @@ captions = {
     "diff": "Разница между изображениями",
 }
 
+def encode_image_from_path(path):
+    with open(path, "rb") as file:
+        return base64.b64encode(file.read()).decode("utf-8")
+
 if st.button("Сравнить изображения"):
     if file_type == "PDF-файлы":
         # Используем уже сконвертированные пути
         payload = {
-            "img1_path": converted_images[0],
-            "img2_path": converted_images[1],
+            "img1": encode_image_from_path(converted_images[0]),
+            "img2": encode_image_from_path(converted_images[1]),
         }
     else:
         # Если обычные изображения — создаем временные файлы
@@ -120,8 +124,8 @@ if st.button("Сравнить изображения"):
             temp_paths.append(temp_file.name)
 
         payload = {
-            "img1_path": temp_paths[0],
-            "img2_path": temp_paths[1],
+            "img1": encode_image_from_path(temp_paths[0]),
+            "img2": encode_image_from_path(temp_paths[1]),
         }
 
     response = requests.post(
